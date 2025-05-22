@@ -3,6 +3,16 @@ body {
   padding: 0;
   overflow: hidden
 }
+h1 {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  font-size: 80px;
+  font-weight: 900;
+  color: rgb(29, 233, 216);
+  text-shadow: 3px 3px 5px rgb(41, 180, 136);
+  transform: translate(-50%, -50%)
+}
 h2 {
   opacity: 0;
   position: absolute;
@@ -14,12 +24,54 @@ h2 {
   font-weight: 999;
   color: red;
   text-shadow: 4px 4px 2px darkred;
-  pointer-events: none;
+  pointer-events: none
+}
+.game {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%
 }
 .container {
-  position: relative;
-  height: 100vh;
-  width: 100%
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  opacity: 0
+}
+.lobby-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: linear-gradient(to bottom, rgb(20, 160, 140), rgb(40, 100, 200));
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  pointer-events: auto
+}
+#start-game {
+  background: rgb(0, 255, 0);
+  box-shadow: 0 0 16px 3px rgb(30, 230, 80);
+  width: 180px;
+  height: 90px;
+  border-radius: 30px;
+  border: none;
+  font-size: 36px;
+  font-weight: 550;
+  color: rgb(30, 110, 140);
+  pointer-events: auto;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 55%
+}
+#start-game:active {
+  background: rgb(0, 220, 0);
+  color: rgb(20, 90, 110);
+  left: 50.1%;
+  top: 55.2%
 }
 canvas {
   position: absolute;
