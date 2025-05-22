@@ -1,4 +1,3 @@
-// works ???
 let gameStart = false;
 const contCanvas = document.querySelector('.container');
 const contLobbyCanvas = document.querySelector('.lobby-container');
