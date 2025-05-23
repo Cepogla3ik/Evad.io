@@ -1,20 +1,73 @@
 let gameStart = false;
 const contCanvas = document.querySelector('.container');
 const contLobbyCanvas = document.querySelector('.lobby-container');
+const contHeroesCanvas = document.querySelector('.heroes-container');
 const startGameBtn = document.getElementById('start-game');
+const heroesBtn = document.getElementById('heroesButton');
+const backHeroesBtn = document.getElementById('backHeroesButton');
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const magmaxBoxBtn = document.getElementById('magmaxBox');
+const player = {
+            x: canvas.width * 0.5,
+            y: canvas.height * 0.5,
+            radius: 15,
+            speed: 10,
+            engAmount: 30,
+            energyMax: 30,
+            energyRegen: 2,
+            hero: 'magmax',
+            color: null
+        }
+
+magmaxBoxBtn.addEventListener('click', () => {
+    contLobbyCanvas.style.opacity = '1';
+    contLobbyCanvas.style.pointerEvents = 'auto';
+    contCanvas.style.opacity = '0';
+    contCanvas.style.pointerEvents = 'none';
+    contHeroesCanvas.style.opacity = '0';
+    contHeroesCanvas.style.pointerEvents = 'none';
+    player.hero = 'magmax';
+});
 startGameBtn.addEventListener('click', () => {
     gameStart = true;
     contCanvas.style.opacity = '1';
     contCanvas.style.pointerEvents = 'auto';
+
     contLobbyCanvas.style.opacity = '0';
     contLobbyCanvas.style.pointerEvents = 'none';
+    contHeroesCanvas.style.opacity = '0';
+    contHeroesCanvas.style.pointerEvents = 'none';
 });
 
+backHeroesBtn.addEventListener('click', () => {
+    contLobbyCanvas.style.opacity = '1';
+    contLobbyCanvas.style.pointerEvents = 'auto';
+
+    contCanvas.style.opacity = '0';
+    contCanvas.style.pointerEvents = 'none';
+    contHeroesCanvas.style.opacity = '0';
+    contHeroesCanvas.style.pointerEvents = 'none';
+});
+
+heroesBtn.addEventListener('click', () => {
+    contHeroesCanvas.style.opacity = '1';
+    contHeroesCanvas.style.pointerEvents = 'auto';
+
+    contLobbyCanvas.style.opacity = '0';
+    contLobbyCanvas.style.pointerEvents = 'none';
+    contCanvas.style.opacity = '0';
+    contCanvas.style.pointerEvents = 'none';
+});
+
+ // Game 
 const gameStarted = setInterval(() => {
     if (gameStart) {
 
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
         const textEnd = document.getElementById('textEnd');
         const healthBar = document.getElementById('healthBar');
         const energyBar = document.getElementById('energyBar');
@@ -130,17 +183,7 @@ const gameStarted = setInterval(() => {
         }
         const energyRegenPill = addEnergyRegenPill();
 
-        const player = {
-            x: canvas.width * 0.5,
-            y: canvas.height * 0.5,
-            radius: 15,
-            speed: 10,
-            engAmount: 30,
-            energyMax: 30,
-            energyRegen: 2,
-            hero: 'magmax',
-            color: null
-        }
+        // Player obj
         switch (player.hero) {
             case 'magmax':
                 player.color = 'rgb(255, 0, 0)';
@@ -394,6 +437,7 @@ const gameStarted = setInterval(() => {
             hltFillBar.style.width = `${healthPrc}%`;
             engFillBar.style.width = `${(player.engAmount / player.energyMax) * 100}%`;
             if (touchesCount >= 100) {
+                hltFillBar.style.width = '0';
                 cancelAnimationFrame(animationId);
                 textEnd.style.opacity = '1';
             }
