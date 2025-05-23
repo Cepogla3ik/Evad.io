@@ -1,23 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="description" content="Evades fan game" />
+  <meta name="keywords" content="Evades fan, Evades fan game" />
+  <meta name="author" content="Cepoglazik" />
   <meta http-equiv="CONTENT-TYPE" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="index.css">
-  <title>Evades</title>
+  <title>Evades Fan</title>
 </head>
 <body>
   <div class="game">
     <div class="lobby-container">
-      <h1>Evad</h1>
+      <h1>Evades Fan</h1>
       <button id="start-game">Start</button>
+      <button id="heroesButton">Heroes</button>
     </div>
+
+    <div class="heroes-container">
+      <h2 id="heroesText">Heroes</h2>
+      <button id="backHeroesButton">Back</button>
+      <div class="heroes-menu">
+        <button id="magmaxBox">
+          <h5>Magmax</h5>
+          <div id="magmaxCircle"></div>
+        </button>
+      </div>
+    </div>
+
     <div class="container">
       <canvas id="canvas"></canvas>
       <p id="timer"></p>
       <div id="healthBar"></div>
       <div id="energyBar"></div>
-      <h2 id="textEnd">You died</h2>
+      <h3 id="textEnd">You died</h3>
   </div>
   </div>
   
