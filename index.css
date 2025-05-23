@@ -7,13 +7,27 @@ h1 {
   position: absolute;
   top: 20%;
   left: 50%;
+  pointer-events: none;
+  user-select: none;
   font-size: 80px;
   font-weight: 900;
   color: rgb(29, 233, 216);
   text-shadow: 3px 3px 5px rgb(41, 180, 136);
   transform: translate(-50%, -50%)
 }
-h2 {
+#heroesText {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  pointer-events: none;
+  user-select: none;
+  font-size: 60px;
+  font-weight: 550;
+  color: rgb(29, 233, 216);
+  text-shadow: 3px 3px 5px rgb(41, 180, 136);
+  transform: translate(-50%, -50%)
+}
+h3 {
   opacity: 0;
   position: absolute;
   left: 50%;
@@ -24,7 +38,53 @@ h2 {
   font-weight: 999;
   color: red;
   text-shadow: 4px 4px 2px darkred;
-  pointer-events: none
+  pointer-events: none;
+  user-select: none
+}
+h5 {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  font-size: 22px;
+  font-weight: 550;
+  transform: translate(-50%, -50%);
+}
+.heroes-menu > * {
+  position: absolute;
+  width: calc((600px / 3) - 10px);
+  height: 130px;
+  border-radius: 14px;
+  margin-right: 5px;
+  margin-left: 5px;
+  border: none;
+  opacity: 0.9
+}
+#magmaxBox {
+  position: relative;
+  background-color: rgb(230, 0, 0);
+  color: rgb(130, 0, 0)
+}
+#magmaxBox:hover {
+  background-color: rgb(250, 0, 0);
+  color: rgb(150, 0, 0);
+  box-shadow: 0 0 6px 3px rgb(152, 152, 152)
+}
+#magmaxBox:active {
+  background-color: rgb(210, 0, 0);
+  color: rgb(110, 0, 0);
+  box-shadow: 0 0 6px 3px rgb(96, 96, 96);
+  left: 2px;
+  top: 3px
+}
+#magmaxCircle {
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgb(180, 0, 0)
 }
 .game {
   margin: 0;
@@ -51,6 +111,31 @@ h2 {
   opacity: 1;
   pointer-events: auto
 }
+.heroes-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: linear-gradient(to bottom, rgb(20, 160, 140), rgb(40, 100, 200));
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none
+}
+.heroes-menu {
+  display: flex;
+  flex-wrap: wrap;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 50%;
+  width: 600px;
+  height: 450px;
+  padding: 20px;
+  border-radius: 30px;
+  background: rgb(30, 70, 150);
+  overflow-y: auto;
+  opacity: 0.8
+}
 #start-game {
   background: rgb(0, 255, 0);
   box-shadow: 0 0 16px 3px rgb(30, 230, 80);
@@ -62,6 +147,7 @@ h2 {
   font-weight: 550;
   color: rgb(30, 110, 140);
   pointer-events: auto;
+  user-select: none;
   position: absolute;
   transform: translate(-50%, -50%);
   left: 50%;
@@ -72,6 +158,66 @@ h2 {
   color: rgb(20, 90, 110);
   left: 50.1%;
   top: 55.2%
+}
+#start-game:hover {
+  background: rgb(0, 245, 0);
+  color: rgb(15, 85, 105);
+  box-shadow: 0 0 16px 3px rgb(170, 220, 181)
+}
+#heroesButton {
+  background: rgb(50, 170, 220);
+  box-shadow: 0 0 16px 3px rgb(40, 150, 180);
+  width: 120px;
+  height: 40px;
+  border-radius: 18px;
+  border: none;
+  font-size: 24px;
+  font-weight: 550;
+  color: rgb(40, 100, 130);
+  pointer-events: auto;
+  user-select: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 67.5%
+}
+#heroesButton:active {
+  background: rgb(30, 155, 210);
+  color: rgb(40, 90, 100);
+  left: 50.1%;
+  top: 67.7%
+}
+#heroesButton:hover {
+  background: rgb(40, 160, 210);
+  color: rgb(30, 80, 90);
+  box-shadow: 0 0 16px 3px rgb(126, 174, 188)
+}
+#backHeroesButton {
+  background: rgb(50, 170, 220);
+  box-shadow: 0 0 16px 3px rgb(40, 150, 180);
+  width: 120px;
+  height: 40px;
+  border-radius: 18px;
+  border: none;
+  font-size: 24px;
+  font-weight: 550;
+  color: rgb(40, 100, 130);
+  user-select: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 87.5%
+}
+#backHeroesButton:active {
+  background: rgb(30, 155, 210);
+  color: rgb(40, 90, 100);
+  left: 50.1%;
+  top: 87.7%
+}
+#backHeroesButton:hover {
+background: rgb(40, 160, 210);
+  color: rgb(30, 80, 90);
+  box-shadow: 0 0 16px 3px rgb(126, 174, 188)
 }
 canvas {
   position: absolute;
