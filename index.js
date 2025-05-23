@@ -12,6 +12,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const magmaxBoxBtn = document.getElementById('magmaxBox');
+const jotunnBoxBtn = document.getElementById('jotunnBox');
 const player = {
             x: canvas.width * 0.5,
             y: canvas.height * 0.5,
@@ -23,6 +24,9 @@ const player = {
             hero: 'magmax',
             color: null
         }
+        if (localStorage.getItem('heroChoosed')) {
+            player.hero = localStorage.getItem('heroChoosed');
+        }
 
 magmaxBoxBtn.addEventListener('click', () => {
     contLobbyCanvas.style.opacity = '1';
@@ -32,6 +36,15 @@ magmaxBoxBtn.addEventListener('click', () => {
     contHeroesCanvas.style.opacity = '0';
     contHeroesCanvas.style.pointerEvents = 'none';
     player.hero = 'magmax';
+});
+jotunnBoxBtn.addEventListener('click', () => {
+    contLobbyCanvas.style.opacity = '1';
+    contLobbyCanvas.style.pointerEvents = 'auto';
+    contCanvas.style.opacity = '0';
+    contCanvas.style.pointerEvents = 'none';
+    contHeroesCanvas.style.opacity = '0';
+    contHeroesCanvas.style.pointerEvents = 'none';
+    player.hero = 'jotunn';
 });
 startGameBtn.addEventListener('click', () => {
     gameStart = true;
@@ -111,7 +124,7 @@ const gameStarted = setInterval(() => {
 
             switch (ballType) {
                 case 'normal':
-                    object.color = 'grey';
+                    object.color = 'rgb(140, 140, 140)';
                     break;
                 case 'homing':
                     object.color = 'rgb(190, 140, 10)';
@@ -123,6 +136,7 @@ const gameStarted = setInterval(() => {
                     object.color = 'rgb(10, 80, 120)';
                     break;
             }
+            object.baseColor = object.color;
             allObjects.push(object);
             return object;
 
@@ -187,6 +201,11 @@ const gameStarted = setInterval(() => {
         switch (player.hero) {
             case 'magmax':
                 player.color = 'rgb(255, 0, 0)';
+                localStorage.setItem('heroChoosed', 'magmax');
+                break;
+            case 'jotunn':
+                player.color = 'rgb(40, 117, 200)';
+                localStorage.setItem('heroChoosed', 'jotunn');
                 break;
         }
         let followMouse = false;
@@ -226,7 +245,7 @@ const gameStarted = setInterval(() => {
             followMouse = false;
         });
         const movePlayerTowardMouse = () => {
-            if (!followMouse || isMagmaxFirstOn) return;
+            if (!followMouse || pressedZ) return;
 
             const dx = mouse.x - player.x;
             const dy = mouse.y - player.y;
@@ -341,35 +360,110 @@ const gameStarted = setInterval(() => {
         let healthPrc = 100;
         let animationId;
         let invulnerability = false;
-        let isMagmaxFirstOn = false;
+        let pressedZ = false;
         window.addEventListener('keydown', ev => {
-            if (ev.code === 'KeyZ') {
-                isMagmaxFirstOn = !isMagmaxFirstOn;
-                invulnerability = isMagmaxFirstOn;
-                if (isMagmaxFirstOn) {
-                    followMouse = false;
-                } else {
-                    followMouse = true;
-                }
-            }
-        });
+    if (ev.code === 'KeyZ') {
+        if (player.hero === 'magmax') {
+            pressedZ = !pressedZ;
+            invulnerability = pressedZ;
+            followMouse = !pressedZ ? true : false;
+        }
+    }
+});
 
+
+        // Abilities
         const magmaxAbilityFirst = () => {
-            if (isMagmaxFirstOn && player.engAmount > 1) {
+            if (pressedZ && player.engAmount > 1 && player.hero === 'magmax') {
                 player.engAmount -= 0.25;
                 invulnerability = true;
                 player.color = 'rgb(175, 0, 0)';
                 followMouse = false;
                 if (player.engAmount <= 1) {
-                    isMagmaxFirstOn = false;
+                    pressedZ = false;
                     invulnerability = false;
                     followMouse = true;
                 }
-            } else if (!isMagmaxFirstOn) {
+            } else if (!pressedZ) {
                 player.engAmount += player.energyRegen * 0.025;
                 player.color = 'rgb(255, 0, 0)';
             }
         };
+        const freezeRadius = 180;
+const targetSlowdownFactor = 0.2;
+const smoothness = 0.01;
+const shiftColorTowardsBlue = (rgbStr, intensity = 30) => {
+    const rgb = rgbStr.match(/\d+/g).map(Number);
+    const r = Math.max(0, Math.min(255, rgb[0] - intensity));
+    const g = Math.max(0, Math.min(255, rgb[1] - intensity));
+    const b = Math.max(0, Math.min(255, rgb[2] + intensity));
+    return `rgb(${r}, ${g}, ${b})`;
+};
+
+const jotunnAbilitiySecond = () => {
+    for (const enemy of allObjects) {
+        if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+            enemy.originalSpeed = Math.hypot(enemy.dx, enemy.dy);
+        }
+
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        const distance = Math.hypot(dx, dy);
+        const insideRadius = distance < enemy.radius + freezeRadius;
+
+        const angle = Math.atan2(enemy.dy, enemy.dx);
+        const currentSpeed = Math.hypot(enemy.dx, enemy.dy);
+        let targetSpeed;
+
+        if (insideRadius) {
+            targetSpeed = enemy.originalSpeed * targetSlowdownFactor;
+            enemy.color = shiftColorTowardsBlue(enemy.baseColor, 30);
+        } else {
+            targetSpeed = enemy.originalSpeed;
+            enemy.color = enemy.baseColor;
+        }
+
+        const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * smoothness;
+
+        enemy.dx = Math.cos(angle) * newSpeed;
+        enemy.dy = Math.sin(angle) * newSpeed;
+
+        if (enemy.type === 'homing') {
+    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+        enemy.originalSpeed = enemy.speed;
+    }
+
+    const targetSpeed = insideRadius
+        ? enemy.originalSpeed * targetSlowdownFactor
+        : enemy.originalSpeed;
+
+    enemy.speed += (targetSpeed - enemy.speed) * smoothness;
+}
+if (enemy.type === 'dash') {
+    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+        enemy.originalSpeed = enemy.currentSpeed || enemy.speed;
+    }
+
+    const targetSpeed = insideRadius
+        ? enemy.originalSpeed * targetSlowdownFactor
+        : enemy.originalSpeed;
+
+    if (!enemy.dirX || !enemy.dirY) {
+        const norm = Math.hypot(enemy.dx, enemy.dy);
+        enemy.dirX = enemy.dx / norm;
+        enemy.dirY = enemy.dy / norm;
+    }
+
+    enemy.currentSpeed += (targetSpeed - enemy.currentSpeed) * smoothness;
+    enemy.dx = enemy.dirX * enemy.currentSpeed;
+    enemy.dy = enemy.dirY * enemy.currentSpeed;
+}
+
+
+    }
+};
+
+
 
         const checkCollisions = () => {
             for (const enemy of allObjects) {
@@ -442,6 +536,7 @@ const gameStarted = setInterval(() => {
                 textEnd.style.opacity = '1';
             }
         };
+        // drawGame
         const drawGame = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -464,6 +559,13 @@ const gameStarted = setInterval(() => {
             ctx.fillStyle = 'rgb(231, 25, 159)';
             ctx.arc(energyRegenPill.x, energyRegenPill.y, energyRegenPill.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, freezeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'cyan';
+            ctx.globalAlpha = 0;
+            ctx.fill();
+            ctx.globalAlpha = 1;
 
             ctx.beginPath();
             ctx.fillStyle = player.color;
@@ -514,13 +616,20 @@ const gameStarted = setInterval(() => {
                 checkCollisions();
             }, 2000);
             drawGame();
-            magmaxAbilityFirst();
+            if (player.hero === 'magmax') {
+                magmaxAbilityFirst();
+            }
+            if (player.hero === 'jotunn') {
+                jotunnAbilitiySecond();
+            }
         };
 
         let timerSeconds = 0;
         setTimeout(() => {
             const timeSurvival = setInterval(() => {
-                timerSeconds++;
+                if (!document.hidden) {
+                    timerSeconds++;
+                }
                 timer.textContent = `Points: ${timerSeconds}`;
                 if (touchesCount >= 100) {
                     clearInterval(timeSurvival);
