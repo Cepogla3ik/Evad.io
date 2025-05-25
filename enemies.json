@@ -1,25 +1,25 @@
 [
   {
-    "amount": 6,
+    "amount": 3,
     "radius": 20,
-    "speed": 8,
+    "speed": 26,
     "type": "normal"
   },
   {
-    "amount": 6,
+    "amount": 3,
     "radius": 20,
-    "speed": 8,
+    "speed": 20,
     "type": "homing"
   },
   {
-    "amount": 6,
+    "amount": 3,
     "radius": 20,
-    "speed": 8,
+    "speed": 16,
     "type": "sniper"
   },
   {
-    "amount": 18,
-    "radius": 40,
+    "amount": 3,
+    "radius": 20,
     "speed": 30,
     "type": "dash"
   }
