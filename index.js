@@ -13,20 +13,21 @@ canvas.height = window.innerHeight;
 
 const magmaxBoxBtn = document.getElementById('magmaxBox');
 const jotunnBoxBtn = document.getElementById('jotunnBox');
+const voltBoxBtn = document.getElementById('voltBox');
 const player = {
-            x: canvas.width * 0.5,
-            y: canvas.height * 0.5,
-            radius: 15,
-            speed: 10,
-            engAmount: 30,
-            energyMax: 30,
-            energyRegen: 2,
-            hero: 'magmax',
-            color: null
-        }
-        if (localStorage.getItem('heroChoosed')) {
-            player.hero = localStorage.getItem('heroChoosed');
-        }
+    x: canvas.width * 0.5,
+    y: canvas.height * 0.5,
+    radius: 15,
+    speed: 10,
+    engAmount: 30,
+    energyMax: 30,
+    energyRegen: 2,
+    hero: 'magmax',
+    color: null
+}
+if (localStorage.getItem('heroChoosed')) {
+    player.hero = localStorage.getItem('heroChoosed');
+}
 
 magmaxBoxBtn.addEventListener('click', () => {
     contLobbyCanvas.style.opacity = '1';
@@ -45,6 +46,15 @@ jotunnBoxBtn.addEventListener('click', () => {
     contHeroesCanvas.style.opacity = '0';
     contHeroesCanvas.style.pointerEvents = 'none';
     player.hero = 'jotunn';
+});
+voltBoxBtn.addEventListener('click', () => {
+    contLobbyCanvas.style.opacity = '1';
+    contLobbyCanvas.style.pointerEvents = 'auto';
+    contCanvas.style.opacity = '0';
+    contCanvas.style.pointerEvents = 'none';
+    contHeroesCanvas.style.opacity = '0';
+    contHeroesCanvas.style.pointerEvents = 'none';
+    player.hero = 'volt';
 });
 startGameBtn.addEventListener('click', () => {
     gameStart = true;
@@ -77,7 +87,7 @@ heroesBtn.addEventListener('click', () => {
     contCanvas.style.pointerEvents = 'none';
 });
 
- // Game 
+// Game 
 const gameStarted = setInterval(() => {
     if (gameStart) {
 
@@ -108,6 +118,7 @@ const gameStarted = setInterval(() => {
 
         const allObjects = [];
         const allBullets = [];
+        const voltProjectiles = [];
         const createObject = (radiusPx, speedK, ballType) => {
             const angle = Math.random() * Math.PI * 2;
             const object = {
@@ -115,12 +126,16 @@ const gameStarted = setInterval(() => {
                 y: canvas.height - getRandom(radiusPx, canvas.height - radiusPx),
                 radius: radiusPx,
                 speed: speedK * 0.25,
+                baseDx: null,
+                baseDy: null,
                 dx: Math.cos(angle) * speedK * 0.25,
                 dy: Math.sin(angle) * speedK * 0.25,
                 type: ballType,
                 color: null,
                 shootCooldown: 0
             }
+            object.baseDx = object.dx;
+            object.baseDy = object.dy;
 
             switch (ballType) {
                 case 'normal':
@@ -207,6 +222,10 @@ const gameStarted = setInterval(() => {
                 player.color = 'rgb(40, 117, 200)';
                 localStorage.setItem('heroChoosed', 'jotunn');
                 break;
+            case 'volt':
+                player.color = 'rgb(230, 72, 4)';
+                localStorage.setItem('heroChoosed', 'volt');
+                break;
         }
         let followMouse = false;
         let mouse = {
@@ -260,83 +279,87 @@ const gameStarted = setInterval(() => {
         };
         const updatePositions = () => {
             allObjects.forEach(obj => {
-                if (obj.type === 'homing') {
-                    const dxToPlayer = player.x - obj.x;
-                    const dyToPlayer = player.y - obj.y;
-                    const distance = Math.hypot(dxToPlayer, dyToPlayer);
-
-                    if (distance < 125) {
-                        const targetAngle = Math.atan2(dyToPlayer, dxToPlayer);
-                        const currentAngle = Math.atan2(obj.dy, obj.dx);
-                        let angleDiff = targetAngle - currentAngle;
-
-                        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-
-                        // angle strength rotate
-                        const newAngle = currentAngle + angleDiff * 0.026;
-                        obj.dx = Math.cos(newAngle) * obj.speed;
-                        obj.dy = Math.sin(newAngle) * obj.speed;
-                    }
-                }
-
-                if (obj.type === 'sniper') {
-                    obj.shootCooldown--;
-                    if (obj.shootCooldown <= 0) {
-                        const dx = player.x - obj.x;
-                        const dy = player.y - obj.y;
-                        const distance = Math.hypot(dx, dy);
-                        // bullet speed
-                        const bulletSpeed = 3.5;
-                        allBullets.push({
-                            x: obj.x,
-                            y: obj.y,
-                            dx: (dx / distance) * bulletSpeed,
-                            dy: (dy / distance) * bulletSpeed,
-                            radius: obj.radius * 0.4,
-                            color: obj.color
-                        });
-                        // Shoot cd
-                        obj.shootCooldown = 120;
-                    }
-                }
-
-                if (obj.type === 'dash') {
-                    if (obj.dashPhase === undefined) {
-                        obj.dashPhase = 'accelerate';
+                if (obj.stunnedUntil && Date.now() < obj.stunnedUntil) {
+                    obj.isStunned = true;
+                    obj.dx = 0;
+                    obj.dy = 0;
+                    if (obj.type === 'dash') {
                         obj.currentSpeed = 0;
-                        const norm = Math.hypot(obj.dx, obj.dy);
-                        obj.dirX = obj.dx / norm;
-                        obj.dirY = obj.dy / norm;
+                    }
+                } else if (obj.stunnedUntil && Date.now() >= obj.stunnedUntil) {
+                    obj.isStunned = false;
+                    obj.stunnedUntil = null;
+                }
+
+                if (!obj.isStunned) {
+                    if (obj.type === 'homing') {
+                        const dxToPlayer = player.x - obj.x;
+                        const dyToPlayer = player.y - obj.y;
+                        const distance = Math.hypot(dxToPlayer, dyToPlayer);
+                        if (distance < 125) {
+                            const targetAngle = Math.atan2(dyToPlayer, dxToPlayer);
+                            const currentAngle = Math.atan2(obj.dy, obj.dx);
+                            let angleDiff = targetAngle - currentAngle;
+                            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                            const newAngle = currentAngle + angleDiff * 0.026;
+                            obj.dx = Math.cos(newAngle) * obj.speed;
+                            obj.dy = Math.sin(newAngle) * obj.speed;
+                        }
                     }
 
-                    const acceleration = 1;
-                    const deceleration = 0.025;
-
-                    if (obj.dashPhase === 'accelerate') {
-                        obj.currentSpeed += acceleration;
-                        if (obj.currentSpeed >= obj.speed) {
-                            obj.currentSpeed = obj.speed;
-                            obj.dashPhase = 'decelerate';
-                        }
-                    } else if (obj.dashPhase === 'decelerate') {
-                        obj.currentSpeed -= deceleration;
-                        if (obj.currentSpeed <= 0.1) {
-                            obj.currentSpeed = obj.speed;
+                    if (obj.type === 'dash') {
+                        const acceleration = 1;
+                        const deceleration = 0.025;
+                        if (obj.dashPhase === undefined) {
                             obj.dashPhase = 'accelerate';
+                            obj.currentSpeed = 0;
+                            const norm = Math.hypot(obj.dx, obj.dy);
+                            obj.dirX = obj.dx / norm;
+                            obj.dirY = obj.dy / norm;
+                        }
+                        if (obj.dashPhase === 'accelerate') {
+                            obj.currentSpeed += acceleration;
+                            if (obj.currentSpeed >= obj.speed) {
+                                obj.currentSpeed = obj.speed;
+                                obj.dashPhase = 'decelerate';
+                            }
+                        } else if (obj.dashPhase === 'decelerate') {
+                            obj.currentSpeed -= deceleration;
+                            if (obj.currentSpeed <= 0.1) {
+                                obj.currentSpeed = obj.speed;
+                                obj.dashPhase = 'accelerate';
+                            }
+                        }
+                        obj.dx = obj.dirX * obj.currentSpeed;
+                        obj.dy = obj.dirY * obj.currentSpeed;
+                        if (obj.x - obj.radius < 0 || obj.x + obj.radius > canvas.width) {
+                            obj.dirX *= -1;
+                            obj.dx *= -1;
+                        }
+                        if (obj.y - obj.radius < 0 || obj.y + obj.radius > canvas.height) {
+                            obj.dirY *= -1;
+                            obj.dy *= -1;
                         }
                     }
 
-                    obj.dx = obj.dirX * obj.currentSpeed;
-                    obj.dy = obj.dirY * obj.currentSpeed;
-
-                    if (obj.x - obj.radius < 0 || obj.x + obj.radius > canvas.width) {
-                        obj.dirX *= -1;
-                        obj.dx *= -1;
-                    }
-                    if (obj.y - obj.radius < 0 || obj.y + obj.radius > canvas.height) {
-                        obj.dirY *= -1;
-                        obj.dy *= -1;
+                    if (obj.type === 'sniper') {
+                        obj.shootCooldown--;
+                        if (obj.shootCooldown <= 0) {
+                            const dx = player.x - obj.x;
+                            const dy = player.y - obj.y;
+                            const distance = Math.hypot(dx, dy);
+                            const bulletSpeed = 3.5;
+                            allBullets.push({
+                                x: obj.x,
+                                y: obj.y,
+                                dx: (dx / distance) * bulletSpeed,
+                                dy: (dy / distance) * bulletSpeed,
+                                radius: obj.radius * 0.4,
+                                color: obj.color
+                            });
+                            obj.shootCooldown = 120;
+                        }
                     }
                 }
 
@@ -351,10 +374,19 @@ const gameStarted = setInterval(() => {
                 }
             });
 
+
+
+
             allBullets.forEach(b => {
                 b.x += b.dx;
                 b.y += b.dy;
             });
+
+            voltProjectiles.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+            });
+
         };
         let touchesCount = 0;
         let healthPrc = 100;
@@ -362,17 +394,21 @@ const gameStarted = setInterval(() => {
         let invulnerability = false;
         let pressedZ = false;
         window.addEventListener('keydown', ev => {
-    if (ev.code === 'KeyZ') {
-        if (player.hero === 'magmax') {
-            pressedZ = !pressedZ;
-            invulnerability = pressedZ;
-            followMouse = !pressedZ ? true : false;
-        }
-    }
-});
+            if (ev.code === 'KeyZ' && player.hero === 'magmax') {
+                if (player.hero === 'magmax') {
+                    pressedZ = !pressedZ;
+                    invulnerability = pressedZ;
+                    followMouse = !pressedZ ? true : false;
+                }
+            }
+        });
 
 
         // Abilities
+        let canVoltProj = true;
+        setInterval(() => {
+            canVoltProj = true;
+        }, 6500);
         const magmaxAbilityFirst = () => {
             if (pressedZ && player.engAmount > 1 && player.hero === 'magmax') {
                 player.engAmount -= 0.25;
@@ -385,87 +421,173 @@ const gameStarted = setInterval(() => {
                     followMouse = true;
                 }
             } else if (!pressedZ) {
-                player.engAmount += player.energyRegen * 0.025;
                 player.color = 'rgb(255, 0, 0)';
             }
         };
         const freezeRadius = 180;
-const targetSlowdownFactor = 0.2;
-const smoothness = 0.01;
-const shiftColorTowardsBlue = (rgbStr, intensity = 30) => {
-    const rgb = rgbStr.match(/\d+/g).map(Number);
-    const r = Math.max(0, Math.min(255, rgb[0] - intensity));
-    const g = Math.max(0, Math.min(255, rgb[1] - intensity));
-    const b = Math.max(0, Math.min(255, rgb[2] + intensity));
-    return `rgb(${r}, ${g}, ${b})`;
-};
+        const targetSlowdownFactor = 0.2;
+        const smoothness = 0.01;
+        const shiftColorTowardsBlue = (rgbStr, intensity = 30) => {
+            const rgb = rgbStr.match(/\d+/g).map(Number);
+            const r = Math.max(0, Math.min(255, rgb[0] - intensity));
+            const g = Math.max(0, Math.min(255, rgb[1] - intensity));
+            const b = Math.max(0, Math.min(255, rgb[2] + intensity));
+            return `rgb(${r}, ${g}, ${b})`;
+        };
 
-const jotunnAbilitiySecond = () => {
-    for (const enemy of allObjects) {
-        if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
-            enemy.originalSpeed = Math.hypot(enemy.dx, enemy.dy);
-        }
+        const jotunnAbilitiySecond = () => {
+            for (const enemy of allObjects) {
+                if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+                    enemy.originalSpeed = Math.hypot(enemy.dx, enemy.dy);
+                }
 
-        const dx = enemy.x - player.x;
-        const dy = enemy.y - player.y;
-        const distance = Math.hypot(dx, dy);
-        const insideRadius = distance < enemy.radius + freezeRadius;
+                const dx = enemy.x - player.x;
+                const dy = enemy.y - player.y;
+                const distance = Math.hypot(dx, dy);
+                const insideRadius = distance < enemy.radius + freezeRadius;
 
-        const angle = Math.atan2(enemy.dy, enemy.dx);
-        const currentSpeed = Math.hypot(enemy.dx, enemy.dy);
-        let targetSpeed;
+                const angle = Math.atan2(enemy.dy, enemy.dx);
+                const currentSpeed = Math.hypot(enemy.dx, enemy.dy);
+                let targetSpeed;
 
-        if (insideRadius) {
-            targetSpeed = enemy.originalSpeed * targetSlowdownFactor;
-            enemy.color = shiftColorTowardsBlue(enemy.baseColor, 30);
-        } else {
-            targetSpeed = enemy.originalSpeed;
-            enemy.color = enemy.baseColor;
-        }
+                if (insideRadius) {
+                    targetSpeed = enemy.originalSpeed * targetSlowdownFactor;
+                    enemy.color = shiftColorTowardsBlue(enemy.baseColor, 30);
+                } else {
+                    targetSpeed = enemy.originalSpeed;
+                    enemy.color = enemy.baseColor;
+                }
 
-        const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * smoothness;
+                const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * smoothness;
 
-        enemy.dx = Math.cos(angle) * newSpeed;
-        enemy.dy = Math.sin(angle) * newSpeed;
+                enemy.dx = Math.cos(angle) * newSpeed;
+                enemy.dy = Math.sin(angle) * newSpeed;
 
-        if (enemy.type === 'homing') {
-    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
-        enemy.originalSpeed = enemy.speed;
-    }
+                if (enemy.type === 'homing') {
+                    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+                        enemy.originalSpeed = enemy.speed;
+                    }
 
-    const targetSpeed = insideRadius
-        ? enemy.originalSpeed * targetSlowdownFactor
-        : enemy.originalSpeed;
+                    const targetSpeed = insideRadius ?
+                        enemy.originalSpeed * targetSlowdownFactor :
+                        enemy.originalSpeed;
 
-    enemy.speed += (targetSpeed - enemy.speed) * smoothness;
-}
-if (enemy.type === 'dash') {
-    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
-        enemy.originalSpeed = enemy.currentSpeed || enemy.speed;
-    }
+                    enemy.speed += (targetSpeed - enemy.speed) * smoothness;
+                }
+                if (enemy.type === 'dash') {
+                    if (!enemy.originalSpeed && enemy.originalSpeed !== 0) {
+                        enemy.originalSpeed = enemy.currentSpeed || enemy.speed;
+                    }
 
-    const targetSpeed = insideRadius
-        ? enemy.originalSpeed * targetSlowdownFactor
-        : enemy.originalSpeed;
+                    const targetSpeed = insideRadius ?
+                        enemy.originalSpeed * targetSlowdownFactor :
+                        enemy.originalSpeed;
 
-    if (!enemy.dirX || !enemy.dirY) {
-        const norm = Math.hypot(enemy.dx, enemy.dy);
-        enemy.dirX = enemy.dx / norm;
-        enemy.dirY = enemy.dy / norm;
-    }
+                    if (!enemy.dirX || !enemy.dirY) {
+                        const norm = Math.hypot(enemy.dx, enemy.dy);
+                        enemy.dirX = enemy.dx / norm;
+                        enemy.dirY = enemy.dy / norm;
+                    }
 
-    enemy.currentSpeed += (targetSpeed - enemy.currentSpeed) * smoothness;
-    enemy.dx = enemy.dirX * enemy.currentSpeed;
-    enemy.dy = enemy.dirY * enemy.currentSpeed;
-}
-
-
-    }
-};
+                    enemy.currentSpeed += (targetSpeed - enemy.currentSpeed) * smoothness;
+                    enemy.dx = enemy.dirX * enemy.currentSpeed;
+                    enemy.dy = enemy.dirY * enemy.currentSpeed;
+                }
 
 
+            }
+        };
+        let isEnemiesInVoltProj = false;
+        const voltAbilities = () => {
+            let isDashing = false;
+            let dashCooldown = false;
+            let abilityCooldown = false;
+            const dashCooldownDuration = 3000;
+            const abilityCooldownDuration = 2000;
+            const dashDistance = 200;
+            const dashDuration = 200;
+
+            document.addEventListener('keydown', ev => {
+                if (ev.code === 'KeyZ' && !isDashing && !dashCooldown && !abilityCooldown && player.engAmount >= 20) {
+                    isDashing = true;
+                    dashCooldown = true;
+                    abilityCooldown = true;
+                    invulnerability = true;
+                    player.engAmount -= 20;
+
+                    const startX = player.x;
+                    const startY = player.y;
+                    const dx = mouse.x - player.x;
+                    const dy = mouse.y - player.y;
+                    const angle = Math.atan2(dy, dx);
+
+                    const endX = startX + Math.cos(angle) * dashDistance;
+                    const endY = startY + Math.sin(angle) * dashDistance;
+                    const dashStartTime = performance.now();
+
+                    function dashAnimation() {
+                        const now = performance.now();
+                        const elapsed = now - dashStartTime;
+                        const progress = Math.min(elapsed / dashDuration, 1);
+
+                        player.x = startX + (endX - startX) * progress;
+                        player.y = startY + (endY - startY) * progress;
+
+                        allObjects.forEach(enemy => {
+                            const dx = enemy.x - player.x;
+                            const dy = enemy.y - player.y;
+                            const distance = Math.hypot(dx, dy);
+
+                            if (distance < enemy.radius + player.radius) {
+                                enemy.stunnedUntil = Date.now() + 1500;
+                                enemy.stunned = true;
+                            }
+                        });
+
+                        if (progress < 1) {
+                            requestAnimationFrame(dashAnimation);
+                        } else {
+                            isDashing = false;
+                            invulnerability = false;
+                        }
+                    }
+                    dashAnimation();
+
+                    setTimeout(() => {
+                        dashCooldown = false;
+                    }, dashCooldownDuration);
+
+                    setTimeout(() => {
+                        abilityCooldown = false;
+                    }, abilityCooldownDuration);
+                }
+
+                if (ev.code === 'KeyX' && canVoltProj && player.engAmount >= 45) {
+                    const dx = mouse.x - player.x;
+                    const dy = mouse.y - player.y;
+                    const distance = Math.hypot(dx, dy);
+                    const normX = dx / distance;
+                    const normY = dy / distance;
+                    player.engAmount -= 45;
+                    canVoltProj = false;
+                    voltProjectiles.push({
+                        x: player.x,
+                        y: player.y,
+                        dx: normX * 1.75,
+                        dy: normY * 1.75,
+                        radius: 80,
+                        color: 'rgb(243, 178, 27)',
+                        type: 'volt',
+                        createdAt: Date.now()
+                    });
+                }
+
+
+            });
+        };
 
         const checkCollisions = () => {
+            isEnemiesInVoltProj = false;
             for (const enemy of allObjects) {
                 const dx = enemy.x - player.x;
                 const dy = enemy.y - player.y;
@@ -476,6 +598,46 @@ if (enemy.type === 'dash') {
                     break;
                 }
             }
+            for (const enemy of allObjects) {
+                let insideAny = false;
+
+                voltProjectiles.forEach(p => {
+                    const dx = enemy.x - p.x;
+                    const dy = enemy.y - p.y;
+                    const distance = Math.hypot(dx, dy);
+                    if (distance < enemy.radius + p.radius) {
+                        insideAny = true;
+
+                        const speed = Math.hypot(enemy.dx, enemy.dy);
+                        const baseSpeed = Math.hypot(enemy.baseDx, enemy.baseDy);
+                        const minSpeed = baseSpeed * 0.2;
+
+                        let newSpeed = speed * 0.9;
+                        if (newSpeed < minSpeed) newSpeed = minSpeed;
+
+                        const angle = Math.atan2(enemy.dy, enemy.dx);
+                        enemy.dx = Math.cos(angle) * newSpeed;
+                        enemy.dy = Math.sin(angle) * newSpeed;
+                    }
+                });
+
+                enemy.isInVolt = insideAny;
+
+                if (!insideAny) {
+                    const targetSpeed = Math.hypot(enemy.baseDx, enemy.baseDy);
+                    const currentSpeed = Math.hypot(enemy.dx, enemy.dy);
+
+                    const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * 0.02;
+
+                    const angle = Math.atan2(enemy.dy, enemy.dx);
+                    enemy.dx = Math.cos(angle) * newSpeed;
+                    enemy.dy = Math.sin(angle) * newSpeed;
+                }
+            }
+
+
+
+
             for (const bullet of allBullets) {
                 const dx = bullet.x - player.x;
                 const dy = bullet.y - player.y;
@@ -535,10 +697,40 @@ if (enemy.type === 'dash') {
                 cancelAnimationFrame(animationId);
                 textEnd.style.opacity = '1';
             }
+
+            for (const p of voltProjectiles) {
+                for (const enemy of allObjects) {
+                    const dxE = p.x - enemy.x;
+                    const dyE = p.y - enemy.y;
+                    const distE = Math.hypot(dxE, dyE);
+                    if (distE < p.radius + enemy.radius) {
+                        enemy.slowed = true;
+                        enemy.slowStart = Date.now();
+                    }
+                }
+            }
+
         };
         // drawGame
         const drawGame = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const projectileLifetime = 4500;
+            voltProjectiles.forEach(proj => {
+                if (Date.now() - proj.createdAt > projectileLifetime) {
+                    proj.x = -1000;
+                    proj.y = -1000;
+                }
+            });
+
+            voltProjectiles.forEach(p => {
+                ctx.beginPath();
+                ctx.fillStyle = p.color;
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.globalAlpha = '0.8';
+                ctx.fill();
+                ctx.globalAlpha = '1';
+            });
 
             ctx.beginPath();
             ctx.fillStyle = 'orange';
@@ -571,7 +763,7 @@ if (enemy.type === 'dash') {
             ctx.fillStyle = player.color;
             ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
             ctx.strokeStyle = 'black';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 0.75;
             ctx.stroke();
             ctx.fill();
 
@@ -579,11 +771,19 @@ if (enemy.type === 'dash') {
                 ctx.beginPath();
                 ctx.fillStyle = obj.color;
                 ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 3.5;
+                if (obj.isInVolt || obj.isStunned) {
+                    ctx.strokeStyle = 'rgb(239, 149, 15)';
+                    ctx.lineWidth = 6;
+                } else {
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 3.5;
+                }
                 ctx.stroke();
                 ctx.fill();
             });
+
+
+
             allBullets.forEach(b => {
                 ctx.beginPath();
                 ctx.fillStyle = b.color;
@@ -605,6 +805,7 @@ if (enemy.type === 'dash') {
                 player.engAmount = 0;
             }
         }
+
         const animate = () => {
             animationId = requestAnimationFrame(() => {
                 animate();
@@ -616,6 +817,7 @@ if (enemy.type === 'dash') {
                 checkCollisions();
             }, 2000);
             drawGame();
+            player.engAmount += player.energyRegen * 0.025;
             if (player.hero === 'magmax') {
                 magmaxAbilityFirst();
             }
@@ -623,6 +825,9 @@ if (enemy.type === 'dash') {
                 jotunnAbilitiySecond();
             }
         };
+        if (player.hero === 'volt') {
+            voltAbilities();
+        }
 
         let timerSeconds = 0;
         setTimeout(() => {
