@@ -573,9 +573,9 @@ const gameStarted = setInterval(() => {
                     voltProjectiles.push({
                         x: player.x,
                         y: player.y,
-                        dx: normX * 1.75,
-                        dy: normY * 1.75,
-                        radius: 80,
+                        dx: normX * 2.5,
+                        dy: normY * 2.5,
+                        radius: 130,
                         color: 'rgb(243, 178, 27)',
                         type: 'volt',
                         createdAt: Date.now()
